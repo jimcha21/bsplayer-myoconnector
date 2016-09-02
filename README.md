@@ -9,5 +9,7 @@ The connector's code is written in Lua language.
 # Requirements
 
 BS player : http://bsplayer.com/
+
 Myo Connect : Link https://www.myo.com/start
+
 Windows or Mac OS
