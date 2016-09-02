@@ -1,0 +1,249 @@
+enable_Connector=0
+cur_angle=0
+
+function playpause_movie()
+	-- body
+	if platform == "Windows" then
+		myo.keyboard("space", "press")
+	end
+end
+
+function volumeUp()
+	-- body
+	if platform == "Windows" then
+		myo.keyboard("up_arrow", "press")
+	end
+end
+
+function volumeDown()
+	-- body
+	if platform == "Windows" then
+		myo.keyboard("down_arrow", "press")
+	end
+end
+
+function fast_forward()
+	-- body
+	if platform == "Windows" then
+		myo.keyboard("right_arrow", "press")
+	end
+end
+
+function rewind()
+	-- body
+	if platform == "Windows" then
+		myo.keyboard("left_arrow", "press")
+	end
+end
+
+function onPoseEdge( pose, edge )
+	
+    div0 = PARAMETER_FOR_SEEKING
+    div1 = PARAMETER_FOR_SLOW_VOLUME_UD
+    div2 = PARAMETER_FOR_NORMAL_VOLUME_UD
+    div3 = PARAMETER_FOR_FAST_VOLUME_UD
+    div4 = PARAMETER_FOR_FASTER_VOLUME_UD
+
+ 	milisec = myo.getTimeMilliseconds()
+
+ 	pose = conditionallySwapWave(pose) --check for left handed
+		
+	if edge=="on" then
+		if pose=="fingersSpread" then
+			playpause_movie()
+		end
+		myo.unlock("timed")
+	end
+
+	if pose=="waveOut" then
+		--seekActive= edge == "on";
+		if edge=="on" then
+			forseek=true
+			s_count=0
+			var=1
+			myo.unlock("hold")
+		else
+			forseek=false
+    		myo.unlock("timed")
+		end
+	end
+
+	if pose=="waveIn" then
+		--seekActive= edge == "on";
+		if edge=="on" then
+			forback=true
+			s_count=0
+			var=1
+			myo.unlock("hold")
+		else
+			forback=false
+    		myo.unlock("timed")
+		end
+	end
+
+	if pose=="fist" then
+		
+		seekActive= edge == "on";
+    	cur_angle=getMyoRollDegrees()
+    	v_count=0
+    	if edge=="off" then
+     	   --myo.lock()
+     	   myo.unlock("timed")
+    	else
+       	   myo.unlock("hold")
+    	end
+	end
+	
+
+end
+
+function conditionallySwapWave(pose)   
+    if myo.getArm() == "left" then
+        if pose == "waveIn" then
+            pose = "waveOut"
+        elseif pose == "waveOut" then
+            pose = "waveIn"
+        end
+    end
+    return pose
+end 
+
+function getMyoRollDegrees()
+    local degrees = math.deg(myo.getRoll())
+    return degrees
+end
+
+
+PARAMETER_FOR_SEEKING = 30
+PARAMETER_FOR_SLOW_VOLUME_UD = 25
+PARAMETER_FOR_NORMAL_VOLUME_UD = 10
+PARAMETER_FOR_FAST_VOLUME_UD = 5
+PARAMETER_FOR_FASTER_VOLUME_UD = 3
+
+
+function onActiveChange(isActive)
+    if not isActive then
+        dif_angle = 0 
+        div0 = PARAMETER_FOR_SEEKING
+        div1 = PARAMETER_FOR_SLOW_VOLUME_UD
+        div2 = PARAMETER_FOR_NORMAL_VOLUME_UD
+        div3 = PARAMETER_FOR_FAST_VOLUME_UD
+        div4 = PARAMETER_FOR_FASTER_VOLUME_UD
+	end
+end
+
+function onPeriodic( )
+	-- body
+	local time = myo.getTimeMilliseconds()
+
+	if forseek == true then
+		--myo.debug(s_count)
+		if s_count > PARAMETER_FOR_SEEKING/var then
+			fast_forward()
+			s_count=0
+			var=var+0.5
+		end
+		s_count=s_count+1
+	end 
+
+	if forback == true then
+		--myo.debug(s_count)
+		if s_count > PARAMETER_FOR_SEEKING/var then
+			rewind()
+			s_count=0
+			var=var+0.5
+		end
+		s_count=s_count+1
+	end 
+
+
+
+	if seekActive == true then
+
+		dif_angle=degreeDiff(getMyoRollDegrees(),cur_angle)
+		
+		--myo.debug(time-milisec)
+		if dif_angle>0 then -- for the volume up
+			if dif_angle<4 then
+				--myo.debug(dif_angle)
+				if v_count > div1 then
+					volumeUp()
+					--myo.debug("poluxalaro +")
+					v_count=0
+				end
+			elseif dif_angle<6 then
+				if v_count > div2 then
+					volumeUp()
+					--myo.debug("xalaro +")
+					v_count=0
+				end
+			elseif dif_angle<9 then
+				if v_count > div3 then
+					volumeUp()
+					--myo.debug("ligoooo +")
+					v_count=0
+				end
+			else
+				if v_count > div4 then
+					volumeUp()
+					v_count=0
+					--myo.debug("piopolu +")
+				end
+			end
+		elseif dif_angle<0 then -- for the volume down
+			if dif_angle>-3 then
+				if v_count > div1 then
+					v_count=0
+					volumeDown()
+					--myo.debug("poluxalaro -")
+				end	
+			elseif dif_angle>-5 then
+				if v_count > div2 then
+					v_count=0
+					volumeDown()
+					--myo.debug("xalaro -")
+				end
+			elseif dif_angle>-8 then
+				if v_count > div3 then
+					v_count=0
+					volumeDown()
+					--myo.debug("ligoooo -")
+				end
+			else
+				if v_count > div4 then
+					volumeDown()
+					v_count=0
+					--myo.debug("piopolu -")
+				end	
+			end
+
+		end
+		v_count=v_count+1
+	end
+
+end
+
+function degreeDiff(value, base)
+    local diff = value - base
+
+    if diff > 180 then
+        diff = diff - 360
+    elseif diff < -180 then
+        diff = diff + 360
+    end
+    return diff
+end
+
+function onForegroundWindowChange(app, title)
+	if platform == "Windows" then
+		if app == "bsplayer.exe" then
+			myo.vibrate("short")
+			return true
+		end
+	end
+	return false
+end
+
+function activeAppName()
+    return "BSplayer"
+end
