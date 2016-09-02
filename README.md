@@ -1,4 +1,4 @@
-# BSPlayer_myoconnector
+# BS Player_myoconnector
 
 The BS Player connector for Thalmic Myo armband.
 
